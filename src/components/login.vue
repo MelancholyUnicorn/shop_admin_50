@@ -52,12 +52,26 @@ export default {
         if (!flag) return
         // console.log('123')
         axios.post('http://localhost:8888/api/private/v1/login', this.form).then(res => {
-          const { meta } = res.data
+          // console.log(res.data)
+
+          const { meta, data } = res.data
           if (meta.status === 200) {
-            console.log(meta.msg)
+            // console.log(meta.msg)
+            this.$message({
+              message: '提示消息',
+              type: 'success',
+              duration: 1000
+            })
+            localStorage.setItem('token', data.token)
             this.$router.push('./index')
           } else if (meta.status === 400) {
             console.log(meta.msg)
+            this.$message({
+              message: '用户名或者密码错误',
+              type: 'error',
+              duration: 1000
+
+            })
           }
         })
       })
