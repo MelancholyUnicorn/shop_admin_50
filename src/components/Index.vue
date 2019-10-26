@@ -57,22 +57,23 @@
 <script>
 export default {
   methods: {
-    logout () {
+    async logout () {
       // console.log('点击了')
       // 点击退出 清空本地localStorage存储的token令牌
-      this.$confirm('您确定要退出吗', '提示', {
-        // 此处的confirmButtonText,cancelButtonText可以定义按钮的内容 但是可以不写 默认就是确定和取消
-        // confirmButtonText: '确定',
-        // cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
+      try {
+        await this.$confirm('您确定要退出吗', '提示', {
+          type: 'warning'
+        })
         localStorage.removeItem('token')
         this.$router.push('/login')
         this.$message({
           type: 'success',
           message: '退出成功!'
         })
-      })
+      } catch (e) {
+        console.log(e)
+        this.$message('退出失败')
+      }
     }
   }
 }

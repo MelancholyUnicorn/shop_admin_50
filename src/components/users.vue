@@ -1,5 +1,16 @@
 <template >
-    <el-table
+   <div class="user">
+     <el-breadcrumb separator="/">
+  <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+  <el-breadcrumb-item>用户管理</el-breadcrumb-item>
+  <el-breadcrumb-item>用户列表</el-breadcrumb-item>
+</el-breadcrumb>
+<hr>
+ <el-input placeholder="请输入内容" class="input-with-select" v-model="query">
+    <el-button slot="append" icon="el-icon-search"  @click="search"></el-button>
+  </el-input>
+    <el-button  plain type="success" >添加用户</el-button>
+      <el-table
     :data="userlist"
       style="width: 100%">
       <el-table-column
@@ -24,52 +35,134 @@
           <el-switch
         v-model="obj.row.mg_state"
         active-color="#13ce66"
-        inactive-color="#ff4949">
+        inactive-color="#ff4949"
+        @change="change(obj.row.id,obj.row.mg_state)">
       </el-switch>
        </template>
       </el-table-column>
        <el-table-column
         label="操作">
-        <el-button size="mini" plain type="primary"      icon="el-icon-edit"></el-button>
-        <el-button size="mini" plain type="success"     icon="el-icon-delete"></el-button>
-        <el-button size="mini" plain type="danger"      icon="el-icon-check" >分配角色</el-button>
+        <template v-slot:default="obj">
+           <el-button size="mini" plain type="primary"  icon="el-icon-edit"></el-button>
+          <el-button size="mini" plain type="success" icon="el-icon-delete" @click="del(obj.row.id)" ></el-button>
+            <el-button size="mini" plain type="danger"  icon="el-icon-check" >分配角色</el-button>
+        </template>
+
       </el-table-column>
     </el-table>
+    <!-- 分页功能 -->
+    <!--@size-change="handleSizeChange"每页条数的变化时触发  -->
+    <!-- @current-change="handleCurrentChange"当前页面变化的时候触发  -->
+    <!-- :current-page="currentPage4"当前页 -->
+    <!-- :page-sizes="[100, 200, 300, 400]"供用户选择的每页条数 -->
+    <!-- :page-size="100" 当前每页的条数-->
+     <template>
+        <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="pagenum"
+      :page-sizes="[2, 4, 6, 8]"
+      :page-size="pagesize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="total">
+      <!-- layout="total, sizes, prev, pager, next, jumper"控件列表 -->
+      <!-- :total="400"总条数 -->
+    </el-pagination>
+     </template>
+   </div>
 </template>
 
 <script>
-import axios from 'axios'
 export default {
   data () {
     return {
-      userlist: []
+      userlist: [],
+      query: '',
+      // 当前页
+      pagenum: 1,
+      // 每页条数
+      pagesize: 2,
+      total: 0
     }
   },
   created () {
     this.getuserlist()
   },
   methods: {
-    getuserlist () {
-      // axios.get(地址,配置项)
-      axios.get('http://localhost:8888/api/private/v1/users', {
+    handleSizeChange (val) {
+      // 每页条数
+      this.pagesize = val
+      // 更新当前页为第一页
+      this.pagenum = 1
+      this.getuserlist()
+    },
+    handleCurrentChange (val) {
+      // val为用户选择的当前是第一页
+      this.pagenum = val
+      // console.log(val)
+      this.getuserlist()
+    },
+    async getuserlist () {
+      const { data } = await this.$axios.get('users', {
         params: {
-          query: '',
-          pagenum: 1,
-          pagesize: 3
-        },
-        headers: {
-          Authorization: localStorage.getItem('token')
+          query: this.query,
+          pagenum: this.pagenum,
+          pagesize: this.pagesize
+        } })
+      this.total = data.total
+      this.userlist = data.users
+    },
+    // 改变状态
+    async change (id, type) {
+      const { meta } = await this.$axios.put(`users/${id}/state/${type}`)
+      if (meta.status === 200) {
+        this.$message.success('设置成功')
+      } else {
+        this.$message('设置失败')
+      }
+    },
+    // 搜索
+    search () {
+      this.pagenum = 1
+      this.getuserlist()
+    },
+    // 删除功能
+    async del (id) {
+      // console.log(id)
+      try {
+        await this.$confirm('您确认要删除该条数据吗?', '温馨提示', {
+          type: 'warning'
+        })
+        const { meta } = await this.$axios.delete(`users/${id}`)
+        if (meta.status === 200) {
+        // 删除成功
+          this.$message.success('删除成功')
+          // 如果当前页只有一条数据,删除了仅有一条数据后 pagenum-1
+          if (this.userlist.length === 1 && this.pagenum > 1) {
+            this.pagenum--
+          }
+          this.getuserlist()
+        } else {
+          this.$message.error('删除失败哦')
         }
-      }).then(res => {
-        console.log(res.data)
-        const { data } = res.data
-        this.userlist = data.users
-      })
+      } catch (e) {
+        console.log(e)
+        this.$message('取消了哦')
+      }
     }
   }
 }
 </script>
 
-<style>
+<style lang="scss" scoped>
+.user{
+.el-breadcrumb{
+padding: 20px;
+}
+.el-input{
+width: 300px;
+padding: 20px;
 
+}
+}
 </style>

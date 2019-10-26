@@ -17,7 +17,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 export default {
   data () {
     return {
@@ -46,35 +45,32 @@ export default {
 
       this.$refs.form.resetFields()
     },
-    login () {
-      this.$refs.form.validate(flag => {
-        // console.log(flag)
-        if (!flag) return
-        // console.log('123')
-        axios.post('http://localhost:8888/api/private/v1/login', this.form).then(res => {
-          // console.log(res.data)
-
-          const { meta, data } = res.data
-          if (meta.status === 200) {
-            // console.log(meta.msg)
-            this.$message({
-              message: '提示消息',
-              type: 'success',
-              duration: 1000
-            })
-            localStorage.setItem('token', data.token)
-            this.$router.push('./index')
-          } else if (meta.status === 400) {
-            console.log(meta.msg)
-            this.$message({
-              message: '用户名或者密码错误',
-              type: 'error',
-              duration: 1000
-
-            })
-          }
-        })
-      })
+    async login () {
+      try {
+        // 等待一个成功的结果
+        await this.$refs.form.validate()
+        // 能到这里说明等到了成功的结果 可以发送ajax请求
+        // console.log('能到这里')
+        const { meta, data } = await this.$axios.post('login', this.form)
+        if (meta.status === 200) {
+          this.$message({
+            message: '提示消息',
+            type: 'success',
+            duration: 1000
+          })
+          localStorage.setItem('token', data.token)
+          this.$router.push('./index')
+        } else if (meta.status === 400) {
+          console.log(meta.msg)
+          this.$message({
+            message: '用户名或者密码错误',
+            type: 'error',
+            duration: 1000
+          })
+        }
+      } catch (e) {
+        console.log(e)
+      }
     }
   }
 }
