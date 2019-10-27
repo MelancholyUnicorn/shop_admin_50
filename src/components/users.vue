@@ -296,9 +296,6 @@ export default {
 
 <style lang="scss" scoped>
 .user{
-.el-breadcrumb{
-padding: 20px;
-}
 .search{
 .el-input{
 width: 300px;
