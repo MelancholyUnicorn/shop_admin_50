@@ -48,7 +48,7 @@
         <template v-slot:default="obj">
            <el-button size="mini" plain type="primary"  icon="el-icon-edit" @click="editdialogshow(obj.row.id)"></el-button>
           <el-button size="mini" plain type="success" icon="el-icon-delete" @click="del(obj.row.id)" ></el-button>
-            <el-button size="mini" plain type="danger"  icon="el-icon-check" >分配角色</el-button>
+            <el-button size="mini" plain type="danger"  icon="el-icon-check" @click="alloteRoles(obj.row)">分配角色</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -94,7 +94,6 @@
     <el-button type="primary" @click="editusers">确 定</el-button>
   </span>
 </el-dialog>
-
      <!-- 添加用户弹框 -->
         <el-dialog
       title="添加用户"
@@ -123,6 +122,34 @@
     <el-button type="primary"  @click="addusers">确 定</el-button>
   </span>
 </el-dialog>
+  <!-- 分配角色 -->
+  <el-dialog
+  title="分配角色"
+  :visible.sync="allotdialogVisible"
+  width="30%">
+  <span>
+    <el-form ref="alloteform" :model="alloteform" label-width="80px">
+      <el-form-item label="用户名">
+      <el-tag>{{alloteform.username}}</el-tag>
+      </el-form-item>
+      <el-form-item label="角色列表">
+        <!-- 此处注意 select选择器的value就是option的value值 -->
+         <el-select v-model="alloteform.rid" placeholder="请选择">
+            <el-option
+              v-for="item in rolelist"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id">
+            </el-option>
+  </el-select>
+  </el-form-item>
+    </el-form>
+  </span>
+  <span slot="footer" class="dialog-footer">
+    <el-button @click="allotdialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="allote">分配</el-button>
+  </span>
+</el-dialog>
    </div>
 </template>
 
@@ -130,6 +157,12 @@
 export default {
   data () {
     return {
+      rolelist: [],
+      alloteform: {
+        rolename: '',
+        userid: '',
+        rid: ''
+      },
       userlist: [ ],
       editform: {
         username: '',
@@ -166,7 +199,8 @@ export default {
       pagesize: 2,
       total: 0,
       dialogVisible: false,
-      editdialogVisible: false
+      editdialogVisible: false,
+      allotdialogVisible: false
 
     }
   },
@@ -289,8 +323,37 @@ export default {
     },
     dialogclose () {
       this.$refs.addForm.resetFields()
+    },
+    async alloteRoles (row) {
+      this.allotdialogVisible = true
+      console.log(row)
+      // 显示用户名
+      this.alloteform.username = row.username
+      this.alloteform.userid = row.id
+      // 发送ajaxs获取当前用户的当前拥有的角色
+      const { meta, data } = await this.$axios.get(`users/${row.id}`)
+      // console.log(res)
+      if (meta.status === 200) {
+        this.alloteform.rid = data.rid === -1 ? '' : data.rid
+      }
+      const res = await this.$axios.get(`roles`)
+      this.rolelist = res.data
+      // console.log(res)
+    },
+    async allote () {
+      this.allotdialogVisible = false
+      // 分配角色
+      const { userid, rid } = this.alloteform
+      const { meta } = await this.$axios.put(`users/${userid}/role`, { rid })
+      if (meta.status === 200) {
+        this.$message.success(meta.msg)
+        this.getuserlist()
+      } else {
+        this.message(meta.msg)
+      }
     }
   }
+
 }
 </script>
 
