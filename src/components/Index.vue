@@ -12,37 +12,24 @@
       <!-- <el-menu>主菜单 -->
       <!-- el-submenu: 子菜单 -->
       <!-- el-menu-item 子菜单展开内容 -->
-       <el-menu
-       router
+      <el-menu
+      router
       unique-opened
       default-active="1-1"
       class="el-menu-vertical-demo"
       background-color="#545c64"
       text-color="#fff"
-      active-text-color="#ffd04b">
-      <el-submenu index="1">
+      active-text-color="#ffd04b"
+     :defaultActive ='defaultActive'>
+      <el-submenu :index="item.path" v-for="item in menus" :key="item.id">
         <template slot="title">
           <i class="el-icon-location"></i>
-          <span>用户管理</span>
+          <span>{{item.authName}}</span>
         </template>
         <!-- 这边的index只要写user即可 因为解析时会自动解析成/user -->
-         <el-menu-item index="user">
+         <el-menu-item :index="seconditem.path" v-for="seconditem in item.children" :key="seconditem.id">
         <i class="el-icon-menu"></i>
-        <span slot="title">用户列表</span>
-      </el-menu-item>
-      </el-submenu>
-       <el-submenu index="2">
-        <template slot="title">
-          <i class="el-icon-location"></i>
-          <span>权限管理</span>
-        </template>
-         <el-menu-item index="roles">
-        <i class="el-icon-menu"></i>
-        <span slot="title">角色列表</span>
-      </el-menu-item>
-        <el-menu-item index="rights">
-        <i class="el-icon-menu"></i>
-        <span slot="title">权限列表</span>
+        <span slot="title">{{seconditem.authName}}</span>
       </el-menu-item>
       </el-submenu>
     </el-menu>
@@ -56,7 +43,27 @@
 
 <script>
 export default {
+  computed: {
+    defaultActive () {
+      return this.$route.path.slice(1)
+    }
+  },
+  data () {
+    return {
+      menus: []
+    }
+  },
+  created () {
+    this.getMenu()
+  },
   methods: {
+    async getMenu () {
+      const { meta, data } = await this.$axios.get(`menus`)
+      if (meta.status === 200) {
+        this.menus = data
+        console.log(this.menus)
+      }
+    },
     async logout () {
       // console.log('点击了')
       // 点击退出 清空本地localStorage存储的token令牌

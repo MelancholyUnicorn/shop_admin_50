@@ -2,9 +2,9 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Index from '../components/Index'
 import Login from '../components/login'
-import User from '../components/users'
-import Rights from '../components/rights'
-import Roles from '../components/roles'
+import User from '../components/users/users'
+import Rights from '../components/rights/rights'
+import Roles from '../components/rights/roles'
 Vue.use(VueRouter)
 
 const routes = [
@@ -14,7 +14,7 @@ const routes = [
     component: Index,
     // 此处如果写成user 那么访问的时候需要加上/index/user
     // 也可以直接写/user 那么在url可以直接通过user直接访问 并且没有改变user是index的子路由的关系
-    children: [{ path: '/user', component: User },
+    children: [{ path: '/users', component: User },
       { path: '/rights', component: Rights },
       { path: '/roles', component: Roles }
     ]
