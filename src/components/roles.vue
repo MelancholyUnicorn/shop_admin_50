@@ -44,13 +44,14 @@
       type="expand"
       width="50">
       <template v-slot:default="{row}">
+        <p v-if="row.children.length===0">暂无权限</p>
         <!-- 第一阶层 分左右 -->
       <el-row v-for="l1 in row.children" :key="l1.id">
         <el-col :span="4" >
           <el-tag  closable @close="handleclose(l1.id,row)">{{l1.authName}}</el-tag>>
         </el-col>
         <el-col :span="20">
-          <el-row v-for="l2 in l1.children" :key="l2.id,">
+          <el-row v-for="l2 in l1.children" :key="l2.id">
                 <el-col :span="4"> <el-tag closable @close="handleclose(l2.id,row)">{{l2.authName}}</el-tag>></el-col>
                 <el-col :span="20">
                   <!-- 这边不用再加一行了 如果加了就是单个行渲染 -->
@@ -81,10 +82,34 @@
       <template v-slot:default="obj">
       <el-button plain icon="el-icon-edit" type="primary" @click="editrolesdialogshow(obj.row)"></el-button>
       <el-button plain icon="el-icon-delete" type="warning" @click="del(obj.row)"></el-button>
-      <el-button plain icon="el-icon-check"  type="success" >分配权限</el-button>
+      <el-button plain icon="el-icon-check"  type="success" @click='allot(obj.row)'>分配权限</el-button>
       </template>
       </el-table-column>
     </el-table>
+    <!-- 授予权限 -->
+<div class="allot">
+  <el-dialog
+  title="分配权限"
+  :visible.sync="allotdialogVisible"
+  width="30%"
+
+  >
+  <span>
+   <el-tree
+   :data="data"
+   :props="defaultProps"
+   default-expand-all
+   show-checkbox
+  node-key="id"
+   ref="tree"
+   ></el-tree>
+  </span>
+  <span slot="footer" class="dialog-footer">
+    <el-button @click="allotdialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="allotinfo">分配</el-button>
+  </span>
+</el-dialog>
+</div>
     <!-- 修改角色 -->
     <el-dialog
   title="修改角色"
@@ -112,9 +137,12 @@
 export default {
   data () {
     return {
+      // 树形控件
+      roleId: '',
       roleslist: [],
       dialogVisible: false,
       editdialogVisible: false,
+      allotdialogVisible: false,
       addroleslist: {
         roleName: '',
         roleDesc: ''
@@ -133,6 +161,12 @@ export default {
           { required: true, message: '请输入角色描述', trigger: ['blur', 'change'] },
           { min: 3, max: 10, message: '长度在 3 到 10 个字符', trigger: 'blur' }
         ]
+      },
+      data: [],
+      // 配置el-tree展示的名字
+      defaultProps: {
+        children: 'children',
+        label: 'authName'
       }
     }
   },
@@ -145,8 +179,9 @@ export default {
     },
     async getroleslist () {
       const { meta, data } = await this.$axios.get(`roles`)
-      // console.log(data)
+      console.log(data)
       if (meta.status === 200) {
+        if (data.children === []) return
         this.roleslist = data
       }
     },
@@ -211,6 +246,50 @@ export default {
         }
       } catch (e) {
         console.log(e)
+      }
+    },
+    async allot (row) {
+      this.allotdialogVisible = true
+      this.roleId = row.id
+      const { data, meta } = await this.$axios.get(`rights/tree`)
+      if (meta.status === 200) {
+        this.$message.success(meta.msg)
+        this.data = data
+        const ids = []
+        row.children.forEach(l1 => {
+        //  所有的一级权限
+          l1.children.forEach(l2 => {
+            // 所有二级的权限
+            l2.children.forEach(l3 => {
+              // 所有三级权限
+              ids.push(l3.id)
+            })
+          })
+        })
+        // setCheckedKeys(keys,leafonly)通过 keys 设置目前勾选的节点，使用此方法必须设置 node-key 属性
+        // keys是一个数组  勾选当前节点的数组
+        this.$refs.tree.setCheckedKeys(ids)
+      } else {
+        this.$message.error(meta.msg)
+      }
+    },
+    async allotinfo () {
+      this.allotdialogVisible = false
+      // 全选的 getCheckedKeys()获取当前选中的子节点的全选的id数组
+      const id = this.$refs.tree.getCheckedKeys()
+      // 半选的  获取当前选中的子节点的半选的id 返回一个id数组
+      const halfid = this.$refs.tree.getHalfCheckedKeys()
+      // 获得包含id的数组
+      const rids = [...id, ...halfid].join(',')
+      console.log(rids)
+      console.log(this.editroleslist.id)
+      const { meta } = await this.$axios.post(`roles/${this.roleId}/rights`, { rids })
+      console.log(meta)
+      if (meta.status === 200) {
+        this.$message.success(meta.msg)
+        this.getroleslist()
+      } else {
+        this.$message.error(meta.msg)
       }
     }
 

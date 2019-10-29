@@ -3,13 +3,13 @@
    <el-form ref="form" :model="form" label-width="80px" :rules="rules" status-icon>
      <img src="../assets/01.jpg" alt="">
   <el-form-item label="用户名:" prop="username" >
-    <el-input v-model="form.username" placeholder="请输入用户名"></el-input>
+    <el-input v-model="form.username" placeholder="请输入用户名" @keyup.enter.native="login"  ></el-input>
   </el-form-item>
     <el-form-item label="密码:" prop="password" >
-    <el-input type="password" v-model="form.password" placeholder="请输入密码"></el-input>
+    <el-input type="password" v-model="form.password" placeholder="请输入密码"  @keyup.enter.native="login" ></el-input>
   </el-form-item>
   <el-form-item>
-      <el-button type="primary" @click.enter="login">登录</el-button>
+      <el-button type="primary" @click="login" >登录</el-button>
       <el-button @click="reset" ref="myrest">重置</el-button>
   </el-form-item>
 </el-form>
